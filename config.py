@@ -51,7 +51,7 @@ class Config:
 
     # Models — mixtral DECOMMISSIONED, do not use
     GROQ_PRIMARY_MODEL   = "llama-3.3-70b-versatile"  # 12000 TPM
-    GROQ_SECONDARY_MODEL = "llama3-70b-8192"           # active fallback
+    GROQ_SECONDARY_MODEL = "openai/gpt-oss-20b"           # active fallback
     GROQ_FALLBACK_MODEL  = "llama-3.1-8b-instant"      # 6000 TPM, fastest
 
     # ── Layer 2: Ollama (reasoning — normalization) ──────────
@@ -60,6 +60,10 @@ class Config:
     OLLAMA_MODEL_CLASSIFY_2 = "deepseek-r1:8b"    # used only for complex reasoning
     OLLAMA_MODEL_EMBED      = "mxbai-embed-large"  # 1024-dim embeddings
     OLLAMA_TIMEOUT          = 45
+
+    # ── Layer 1: SerpAPI (supplier discovery — PRIMARY) ──────
+    SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
+
 
     # ── Layer 1: Scrappa (supplier discovery) ────────────────
     SCRAPPA_API_KEY = os.getenv("SCRAPPA_API_KEY", "")
@@ -105,6 +109,10 @@ class Config:
     @classmethod
     def scrappa_configured(cls) -> bool:
         return bool(cls.SCRAPPA_API_KEY)
+
+    @classmethod
+    def serpapi_configured(cls) -> bool:
+        return bool(cls.SERPAPI_KEY)
 
     # ── Sprint 6: Odoo XML-RPC connection ────────────────────────
     # Odoo 19 Community runs on http://localhost:8069 via Docker

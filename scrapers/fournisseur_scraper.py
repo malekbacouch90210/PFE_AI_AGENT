@@ -198,34 +198,22 @@ def _build_search_queries(country: str, activity_types: List[str]) -> List[str]:
         f"travel supplier {country} booking",
         f"local tour operator {country}",
         f"tour guide company {country}",
+        f"book tours online {country}",
+        f"instant booking tours {country}",
+        f"online reservation tours {country}",
+        f"activities booking website {country}",
+        f"day tours online booking {country}",
+        f"experience provider {country}",
+        f"tour operator with online reservations {country}",
+        f"travel experiences {country}",
+        f"adventure tours {country} booking",
+        f"sightseeing tours {country} online",
+        f"guided tours {country} booking",
+        f"tour packages {country} online booking",
+        f"activity booking platform {country}",
+        f"excursions online reservation {country}",
     ]
 
-    # ── Western CM specific ──────────────────────────────────
-    queries += [
-        f"tour operator {country} bokun",
-        f"tour operator {country} fareharbor",
-        f"tour operator {country} rezdy",
-        f"excursion {country} trekksoft",
-        f"activities {country} checkfront",
-        f"tours {country} regiondo",
-        f"tour operator {country} channel manager",
-        f"experience provider {country} booking system",
-        f"tours {country} booking software",
-    ]
-
-    # ── OTA marketplace operators ────────────────────────────
-    queries += [
-        f"tour operator {country} viator",
-        f"tour company {country} getyourguide",
-        f"excursion company {country} klook",
-        f"viator supplier {country}",
-        f"getyourguide partner {country}",
-        f"klook partner {country}",
-        f"activities operator {country} tripadvisor",
-        f"tour operator {country} expedia activities",
-        f"kkday partner {country}",
-        f"civitatis operator {country}",
-    ]
 
     # ── Asia / China specific ────────────────────────────────
     country_lower = country.lower()

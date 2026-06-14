@@ -307,8 +307,7 @@ def render_validation_page():
                     with st.expander("Description"):
                         st.write(desc)
 
-                if reason:
-                    st.caption(f"AI note: {reason}")
+
 
             with btn_col:
                 st.markdown("<br><br>", unsafe_allow_html=True)

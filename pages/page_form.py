@@ -1,13 +1,12 @@
 """
-pages/page_form.py — FINAL
+pages/page_form.py — UPDATED
 
-
-Changes from original:
-  - REMOVED: required cities, recall old suppliers, activity types sections
-  - ADDED: APScheduler cron section (start time, end time, interval)
-  - ADDED: Live phase progress during execution
-  - ADDED: Full pipeline connected (scraping → norm → matching → validation)
-  - ADDED: Scraping run saved to DB (history card)
+Changes vs previous:
+  - Added: Product results showcase card after Phase 1 completes
+    → shows saved products in a clean table grouped by supplier
+    → per-product: name, activity type, city, country, price, source tool
+  - Fixed: max_products strictly enforced (passed to scrape_supplier)
+  - Kept: APScheduler cron, phase progress, all existing logic
 """
 import asyncio
 import uuid
@@ -45,55 +44,39 @@ def _load_zones_and_countries():
 
 # ── Cron re-run thread ────────────────────────────────────────
 import threading
-_stop_event   = threading.Event()
-_cron_thread  = None
+_stop_event  = threading.Event()
+_cron_thread = None
 
 
 def _cron_loop(form_config: dict, interval_min: int,
                end_dt: datetime, run_number_start: int):
-    """Background thread: repeat pipeline every interval_min until end_dt."""
     import time
     run_num = run_number_start
-    logger.info(
-        f"[Cron] Loop started | every {interval_min}min "
-        f"until {end_dt.strftime('%H:%M')} CET"
-    )
+    logger.info(f"[Cron] Loop started | every {interval_min}min until {end_dt.strftime('%H:%M')} CET")
     while not _stop_event.is_set():
         now_paris = datetime.now(tz=TZ_PARIS)
         if now_paris >= end_dt:
             logger.info("[Cron] End time reached. Stopping.")
             break
-
-        # Wait for next interval
         next_run = datetime.now() + timedelta(minutes=interval_min)
         while datetime.now() < next_run and not _stop_event.is_set():
             if datetime.now(tz=TZ_PARIS) >= end_dt:
                 break
             time.sleep(10)
-
         if _stop_event.is_set() or datetime.now(tz=TZ_PARIS) >= end_dt:
             break
-
         run_id = f"cron_{run_num}_{int(time.time())}"
         logger.info(f"[Cron] Re-run #{run_num} | run_id={run_id}")
-
         try:
             results   = run_post_scraping_pipeline(run_id, limit=500)
             new_prods = results.get("new_products", 0)
-            # Save to DB
-            _save_run_card(run_id, form_config,
-                           status="COMPLETE", new_products=new_prods)
+            _save_run_card(run_id, form_config, status="COMPLETE", new_products=new_prods)
             _add_cron_history(run_id, run_num, results)
-            logger.info(
-                f"[Cron] Re-run #{run_num} done | "
-                f"new_products={new_prods}"
-            )
+            logger.info(f"[Cron] Re-run #{run_num} done | new_products={new_prods}")
         except Exception as e:
             logger.error(f"[Cron] Re-run #{run_num} error: {e}")
             _save_run_card(run_id, form_config, status="FAILED")
-
         run_num += 1
-
     st.session_state["cron_running"] = False
     logger.info("[Cron] Loop finished.")
 
@@ -102,7 +85,6 @@ def _save_run_card(run_id: str, config: dict,
                    status: str = "COMPLETE",
                    suppliers: int = 0, products: int = 0,
                    new_products: int = 0):
-    """Persist run to scraping_runs table."""
     try:
         from sqlalchemy import text
         async def _ins():
@@ -117,17 +99,16 @@ def _save_run_card(run_id: str, config: dict,
                       (run_id, countries, activity_types,
                        min_suppliers, max_suppliers, max_products_per_supplier,
                        status, started_at, finished_at,
-                       total_suppliers_found, total_products_scraped,
-                       new_products_found)
+                       total_suppliers_found, total_products_scraped, new_products_found)
                     VALUES
                       (:run_id,:countries,:atypes,:min_s,:max_s,:max_p,
                        :status,NOW(),NOW(),:sup,:prod,:new_p)
                     ON CONFLICT (run_id) DO UPDATE
-                      SET status               = EXCLUDED.status,
-                          finished_at          = NOW(),
-                          total_suppliers_found= EXCLUDED.total_suppliers_found,
-                          total_products_scraped=EXCLUDED.total_products_scraped,
-                          new_products_found   = EXCLUDED.new_products_found
+                      SET status                = EXCLUDED.status,
+                          finished_at           = NOW(),
+                          total_suppliers_found = EXCLUDED.total_suppliers_found,
+                          total_products_scraped= EXCLUDED.total_products_scraped,
+                          new_products_found    = EXCLUDED.new_products_found
                 """), {
                     "run_id":    run_id,
                     "countries": str(config.get("countries", [])),
@@ -161,7 +142,137 @@ def _add_cron_history(run_id, run_num, results):
         pass
 
 
-# ── Main page ─────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# Product results showcase
+# ─────────────────────────────────────────────────────────────
+
+def _render_product_results(
+    run_id:           str,
+    saved_count:      int,
+    skipped_count:    int,
+    supplier_count:   int,
+    scraped_products: List[Dict],
+):
+    """
+    Renders the product results card after Phase 1 scraping completes.
+    Shows a summary banner and a clean product table.
+    """
+    st.markdown("---")
+    st.markdown("### 📦 Products Collected — Phase 1 Results")
+
+    # ── Summary metrics ──────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("🏢 Suppliers Scraped", supplier_count)
+    c2.metric("✅ Products Saved",    saved_count)
+    c3.metric("⏭ Skipped (dedup)",   skipped_count)
+    c4.metric("📊 Total Extracted",  len(scraped_products))
+
+    if not scraped_products:
+        st.info("No products extracted this run. Check supplier URLs or Firecrawl/ScrapingBee credits.")
+        return
+
+    st.markdown(f"**Run ID:** `{run_id}`")
+    st.divider()
+
+    # ── Per-supplier breakdown ───────────────────────────────
+    # Group products by fournisseur_id (or source as fallback)
+    from collections import defaultdict
+    by_supplier: Dict[str, List[Dict]] = defaultdict(list)
+    for p in scraped_products:
+        key = str(p.get("fournisseur_id") or "unknown")
+        by_supplier[key].append(p)
+
+    st.markdown(f"**{len(by_supplier)} supplier(s) with products:**")
+
+    for sup_id, prods in by_supplier.items():
+        # Determine a display label for this supplier
+        domain = ""
+        for p in prods:
+            url = p.get("url_source") or p.get("booking_url") or ""
+            if url:
+                import re
+                m = re.search(r"https?://(?:www\.)?([^/]+)", url)
+                if m:
+                    domain = m.group(1)
+                    break
+
+        label = domain or f"Supplier #{sup_id}"
+        count = len(prods)
+
+        # Activity type counts for this supplier
+        types_count: Dict[str, int] = {}
+        for p in prods:
+            t = (p.get("_canonical_type") or p.get("categorie_raw") or "?").upper()
+            types_count[t] = types_count.get(t, 0) + 1
+
+        type_pills = " ".join([
+            f"`{k}×{v}`" for k, v in types_count.items()
+        ])
+
+        with st.expander(f"🏢 {label}  —  {count} product(s)  {type_pills}", expanded=(count > 0)):
+
+            # Build display rows
+            rows = []
+            for p in prods:
+                activity = (p.get("_canonical_type") or "?").upper()
+                prix     = p.get("prix")
+                devise   = p.get("devise") or "EUR"
+                price_str = f"{prix:.2f} {devise}" if prix else "—"
+
+                # Source tool badge
+                source = p.get("source") or "?"
+                if "firecrawl" in source:
+                    src_badge = "🔥 Firecrawl"
+                elif "scrapingbee" in source:
+                    src_badge = "🐝 ScrapingBee"
+                else:
+                    src_badge = source
+
+                rows.append({
+                    "Product Name":   p.get("nom_produit", "?"),
+                    "Type":           activity,
+                    "City":           p.get("ville_raw") or "—",
+                    "Country":        p.get("pays_raw") or "—",
+                    "Price":          price_str,
+                    "Duration":       p.get("duree") or "—",
+                    "Source":         src_badge,
+                })
+
+            import pandas as pd
+            df = pd.DataFrame(rows)
+
+            # Color-code activity type column
+            def _type_color(val: str) -> str:
+                colors = {
+                    "EXCURSION": "background-color:#1a4d2e;color:#4ade80",
+                    "TICKET":    "background-color:#1e3a5f;color:#60a5fa",
+                    "TRANSFER":  "background-color:#4a1f1f;color:#f87171",
+                }
+                return colors.get(val, "")
+
+            st.dataframe(
+                df.style.applymap(_type_color, subset=["Type"]),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.divider()
+
+    # ── Source breakdown (Firecrawl vs ScrapingBee) ─────────
+    fc_count = sum(1 for p in scraped_products if "firecrawl" in (p.get("source") or ""))
+    sb_count = sum(1 for p in scraped_products if "scrapingbee" in (p.get("source") or ""))
+
+    if fc_count or sb_count:
+        st.markdown("**Scraping tool breakdown:**")
+        tc1, tc2 = st.columns(2)
+        tc1.metric("🔥 Via Firecrawl",   fc_count)
+        tc2.metric("🐝 Via ScrapingBee", sb_count)
+
+
+# ─────────────────────────────────────────────────────────────
+# Main page
+# ─────────────────────────────────────────────────────────────
+
 def render_form_page():
     st.markdown("## 🌍 DEX AI Sourcing Run")
     st.markdown("Configure your sourcing campaign and schedule.")
@@ -174,29 +285,18 @@ def render_form_page():
     st.markdown("### Section 1 — Countries to source")
     c1, c2 = st.columns([1, 2])
     with c1:
-        selection_mode = st.radio(
-            "Mode", ["By Zone", "Manual selection"], key="sel_mode"
-        )
+        selection_mode = st.radio("Mode", ["By Zone", "Manual selection"], key="sel_mode")
     selected_countries: List[str] = []
     with c2:
         if selection_mode == "By Zone":
-            selected_zones = st.multiselect(
-                "Select zones",
-                options=[z["nom"] for z in zones],
-                key="sel_zones",
-            )
+            selected_zones = st.multiselect("Select zones", options=[z["nom"] for z in zones], key="sel_zones")
             if selected_zones:
                 zone_ids = {zone_map[z] for z in selected_zones}
-                selected_countries = [
-                    c["nom"] for c in countries if c["zone_id"] in zone_ids
-                ]
+                selected_countries = [c["nom"] for c in countries if c["zone_id"] in zone_ids]
                 st.info(f"✅ {len(selected_countries)} countries from {len(selected_zones)} zone(s)")
         else:
-            selected_countries = st.multiselect(
-                "Select countries",
-                options=all_country_names,
-                key="sel_countries",
-            )
+            selected_countries = st.multiselect("Select countries", options=all_country_names, key="sel_countries")
+
     if not selected_countries:
         st.warning("⚠️ Select at least one country or zone.")
         return
@@ -211,13 +311,9 @@ def render_form_page():
     )
     c1, c2 = st.columns(2)
     with c1:
-        min_suppliers = st.number_input(
-            "Min suppliers per country", min_value=1, value=5, step=1
-        )
+        min_suppliers = st.number_input("Min suppliers per country", min_value=1, value=5, step=1)
     with c2:
-        max_suppliers = st.number_input(
-            "Max suppliers per country", min_value=1, value=30, step=5
-        )
+        max_suppliers = st.number_input("Max suppliers per country", min_value=1, value=30, step=5)
     if min_suppliers > max_suppliers:
         st.error("❌ Min must be ≤ Max")
         return
@@ -235,7 +331,7 @@ def render_form_page():
 
     st.divider()
 
-    # ── Section 4 — Schedule (APScheduler) ───────────────────
+    # ── Section 4 — Schedule ─────────────────────────────────
     st.markdown("### Section 4 — Schedule (APScheduler)")
     st.markdown(
         "Set a start time and end time. The pipeline will start exactly "
@@ -248,52 +344,20 @@ def render_form_page():
     if use_schedule:
         now_paris  = datetime.now(tz=TZ_PARIS)
         sc1, sc2, sc3 = st.columns(3)
-
         with sc1:
-            start_h = st.number_input(
-                "Start hour (CET)",   0, 23,
-                value=now_paris.hour,
-                key="sched_start_h"
-            )
-            start_m = st.number_input(
-                "Start minute", 0, 59,
-                value=((now_paris.minute // 5) + 1) * 5 % 60,
-                step=5, key="sched_start_m"
-            )
-
+            start_h = st.number_input("Start hour (CET)", 0, 23, value=now_paris.hour, key="sched_start_h")
+            start_m = st.number_input("Start minute", 0, 59, value=((now_paris.minute // 5) + 1) * 5 % 60, step=5, key="sched_start_m")
         with sc2:
-            end_h = st.number_input(
-                "End hour (CET)", 0, 23,
-                value=(now_paris.hour + 1) % 24,
-                key="sched_end_h"
-            )
-            end_m = st.number_input(
-                "End minute", 0, 59,
-                value=now_paris.minute,
-                step=5, key="sched_end_m"
-            )
-
+            end_h = st.number_input("End hour (CET)", 0, 23, value=(now_paris.hour + 1) % 24, key="sched_end_h")
+            end_m = st.number_input("End minute", 0, 59, value=now_paris.minute, step=5, key="sched_end_m")
         with sc3:
-            interval = st.selectbox(
-                "Re-run every (min)",
-                [5, 10, 15, 20, 30, 45, 60],
-                index=3,  # default 20 min
-                key="sched_interval_sel",
-            )
-            # Preview
-            s_dt = TZ_PARIS.localize(datetime.combine(
-                now_paris.date(),
-                datetime.min.time()
-            ).replace(hour=int(start_h), minute=int(start_m)))
-            e_dt = TZ_PARIS.localize(datetime.combine(
-                now_paris.date(),
-                datetime.min.time()
-            ).replace(hour=int(end_h), minute=int(end_m)))
+            interval = st.selectbox("Re-run every (min)", [5, 10, 15, 20, 30, 45, 60], index=3, key="sched_interval_sel")
+            s_dt = TZ_PARIS.localize(datetime.combine(now_paris.date(), datetime.min.time()).replace(hour=int(start_h), minute=int(start_m)))
+            e_dt = TZ_PARIS.localize(datetime.combine(now_paris.date(), datetime.min.time()).replace(hour=int(end_h), minute=int(end_m)))
             if e_dt <= s_dt:
                 e_dt += timedelta(days=1)
             total_mins = int((e_dt - s_dt).total_seconds() / 60)
             runs_n     = max(1, total_mins // int(interval) + 1)
-
             st.markdown(
                 f'<div style="background:#E8004D22;border:1px solid #E8004D44;'
                 f'border-radius:8px;padding:10px;text-align:center;">'
@@ -306,22 +370,16 @@ def render_form_page():
                 f'</div>',
                 unsafe_allow_html=True,
             )
-
-        # Countdown to start
         if s_dt > now_paris:
             remaining = int((s_dt - now_paris).total_seconds())
-            st.info(
-                f"⏳ Launch will wait until "
-                f"**{int(start_h):02d}:{int(start_m):02d} CET** "
-                f"({remaining // 60}m {remaining % 60}s from now)"
-            )
+            st.info(f"⏳ Launch will wait until **{int(start_h):02d}:{int(start_m):02d} CET** ({remaining // 60}m {remaining % 60}s from now)")
     else:
         start_h = end_h = start_m = end_m = interval = None
         s_dt = e_dt = None
 
     st.divider()
 
-    # ── Summary ──────────────────────────────────────────────
+    # ── Summary metrics ──────────────────────────────────────
     mc = st.columns(4)
     mc[0].metric("Countries",         len(selected_countries))
     mc[1].metric("Suppliers/country", f"{int(min_suppliers)}–{int(max_suppliers)}")
@@ -330,9 +388,9 @@ def render_form_page():
                  f"{int(start_h):02d}:{int(start_m):02d} → {int(end_h):02d}:{int(end_m):02d}"
                  if use_schedule else "Immediate")
 
-    # ── Cron status if already running ───────────────────────
+    # ── Cron status ──────────────────────────────────────────
     if st.session_state.get("cron_running"):
-        end_dt_live = st.session_state.get("cron_end_dt")
+        end_dt_live   = st.session_state.get("cron_end_dt")
         interval_live = st.session_state.get("cron_interval", "?")
         now_p = datetime.now(tz=TZ_PARIS)
         rem_s = int((end_dt_live - now_p).total_seconds()) if end_dt_live and end_dt_live > now_p else 0
@@ -340,8 +398,7 @@ def render_form_page():
             f'<div style="background:#00C85A22;border:1px solid #00C85A;'
             f'border-radius:8px;padding:10px;">'
             f'🟢 <b style="color:#00C85A">Cron active</b> — '
-            f'every {interval_live} min | '
-            f'stops in {rem_s//60}m {rem_s%60}s</div>',
+            f'every {interval_live} min | stops in {rem_s//60}m {rem_s%60}s</div>',
             unsafe_allow_html=True,
         )
         if st.button("⏹ Stop Cron", key="btn_stop_cron_form"):
@@ -354,22 +411,24 @@ def render_form_page():
 
     if st.button("🚀 LAUNCH SOURCING RUN", type="primary", use_container_width=True):
         _launch(
-            countries       = selected_countries,
-            min_suppliers   = int(min_suppliers),
-            max_suppliers   = int(max_suppliers),
-            max_products    = max_products,
-            use_schedule    = use_schedule,
-            start_dt        = s_dt if use_schedule else None,
-            end_dt          = e_dt if use_schedule else None,
-            interval_min    = int(interval) if use_schedule else 0,
+            countries     = selected_countries,
+            min_suppliers = int(min_suppliers),
+            max_suppliers = int(max_suppliers),
+            max_products  = max_products,
+            use_schedule  = use_schedule,
+            start_dt      = s_dt if use_schedule else None,
+            end_dt        = e_dt if use_schedule else None,
+            interval_min  = int(interval) if use_schedule else 0,
         )
 
 
-def _launch(countries, min_suppliers, max_suppliers,
-            max_products, use_schedule,
-            start_dt, end_dt, interval_min):
+# ─────────────────────────────────────────────────────────────
+# Launch
+# ─────────────────────────────────────────────────────────────
 
-    # Save config for cron re-runs
+def _launch(countries, min_suppliers, max_suppliers,
+            max_products, use_schedule, start_dt, end_dt, interval_min):
+
     form_config = {
         "countries":     countries,
         "min_suppliers": min_suppliers,
@@ -381,20 +440,19 @@ def _launch(countries, min_suppliers, max_suppliers,
 
     run_id = str(uuid.uuid4())[:8]
 
-    # ── Phase indicators ──────────────────────────────────────
     st.markdown("---")
     st.markdown("### 🔄 Pipeline Execution")
 
     ph_col = st.columns(4)
     ph_col[0].markdown("📡 **Phase 1**  \nScraping")
     ph_col[1].markdown("🧹 **Phase 2**  \nNormalization")
-    ph_col[2].markdown("🔗 **Phase 4**  \nMatching")
-    ph_col[3].markdown("✅ **Phase 4b**  \nValidation")
+    ph_col[2].markdown("🔗 **Phase 3**  \nMatching")
+    ph_col[3].markdown("✅ **Phase 4**  \nValidation")
 
     prog   = st.progress(0, "Initializing...")
     status = st.empty()
 
-    # ── Wait for exact start time if schedule set ─────────────
+    # ── Wait for scheduled start ──────────────────────────────
     if use_schedule and start_dt:
         import time as _t
         now_paris = datetime.now(tz=TZ_PARIS)
@@ -406,15 +464,16 @@ def _launch(countries, min_suppliers, max_suppliers,
                     break
                 rem = int((start_dt - now_p).total_seconds())
                 wait_placeholder.info(
-                    f"⏳ Waiting for start time "
-                    f"**{start_dt.strftime('%H:%M')} CET** — "
+                    f"⏳ Waiting for start time **{start_dt.strftime('%H:%M')} CET** — "
                     f"{rem // 60}m {rem % 60}s"
                 )
                 _t.sleep(5)
                 st.rerun()
             wait_placeholder.success("✅ Start time reached. Launching now.")
 
-    # ── Phase 1: Supplier + Product Scraping ──────────────────
+    # ── Phase 1: Supplier Discovery + Product Scraping ────────
+    all_scraped_products: List[Dict] = []   # collect all raw products for showcase
+
     async def _do():
         db = DatabaseManager()
         await db.create_tables()
@@ -429,24 +488,21 @@ def _launch(countries, min_suppliers, max_suppliers,
             "recall_old_suppliers":      False,
         })
 
-        # ── Phase 1a — Supplier Discovery ────────────────────
+        # Phase 1a — Supplier Discovery
         from scrapers.fournisseur_scraper import FournisseurScraper
         scraper = FournisseurScraper()
         prog.progress(5, "📡 Phase 1a — Discovering suppliers...")
-        status.info(
-            f"Run: {run_id} | {len(countries)} countries | "
-            f"{min_suppliers}–{max_suppliers} per country"
-        )
+        status.info(f"Run: {run_id} | {len(countries)} countries | {min_suppliers}–{max_suppliers} per country")
         existing_domains = await db.get_existing_domains()
         try:
             suppliers = await scraper.discover(
-                countries      = countries,
-                activity_types = ["excursion", "ticket", "transfer"],
+                countries        = countries,
+                activity_types   = ["excursion", "ticket", "transfer"],
                 existing_domains = existing_domains,
-                min_suppliers  = min_suppliers,
-                max_suppliers  = max_suppliers,
-                run_id         = run_id,
-                required_cities= {},
+                min_suppliers    = min_suppliers,
+                max_suppliers    = max_suppliers,
+                run_id           = run_id,
+                required_cities  = {},
             )
         finally:
             await scraper.close()
@@ -457,8 +513,7 @@ def _launch(countries, min_suppliers, max_suppliers,
         country_id_map = {c["nom"].lower(): c["id"] for c in all_db_c}
         saved_suppliers = []
         for s in suppliers:
-            detected  = (s.get("_detected_country") or
-                         s.get("_target_country") or "").lower()
+            detected = (s.get("_detected_country") or s.get("_target_country") or "").lower()
             s["pays_id"] = country_id_map.get(detected)
             sup_id = await db.save_fournisseur(s)
             if sup_id:
@@ -467,7 +522,7 @@ def _launch(countries, min_suppliers, max_suppliers,
 
         prog.progress(40, f"💾 {len(saved_suppliers)} saved — scraping products...")
 
-        # ── Phase 1b — Product Scraping ───────────────────────
+        # Phase 1b — Product Scraping
         from scrapers.product_scraper import ProductScraper
         product_scraper = ProductScraper()
         total_extracted = total_saved = total_skipped = 0
@@ -476,19 +531,26 @@ def _launch(countries, min_suppliers, max_suppliers,
                 domain = supplier.get("domain", "?")
                 is_mkt = supplier.get("is_marketplace", False)
                 status.info(
-                    f"[{i+1}/{len(saved_suppliers)}] {domain} "
-                    f"{'🏪 marketplace' if is_mkt else '🕷 scraping'}"
+                    f"[{i+1}/{len(saved_suppliers)}] Scraping: {domain} "
+                    f"{'🏪 marketplace' if is_mkt else '🕷 direct'}"
                 )
                 products = await product_scraper.scrape_supplier(
                     supplier     = supplier,
-                    max_products = max_products,
+                    max_products = max_products,   # ✅ strict limit enforced
                     run_id       = run_id,
                 )
                 if products:
+                    # Collect for showcase
+                    all_scraped_products.extend(products)
+
                     batch = await db.save_produits_batch(products)
-                    total_extracted += batch.get("extracted", 0)
-                    total_saved     += batch.get("saved", 0)
-                    total_skipped   += batch.get("skipped", 0)
+                    extracted = batch.get("extracted", len(products))
+                    saved_n   = batch.get("saved", 0)
+                    skipped_n = batch.get("skipped", 0)
+                    total_extracted += extracted
+                    total_saved     += saved_n
+                    total_skipped   += skipped_n
+
                 pct = 40 + int((i + 1) / max(len(saved_suppliers), 1) * 35)
                 prog.progress(pct, f"Saved: {total_saved} | Skipped: {total_skipped}")
         finally:
@@ -510,48 +572,55 @@ def _launch(countries, min_suppliers, max_suppliers,
         }
 
     try:
-        with st.spinner("Phase 1 — Scraping..."):
+        with st.spinner("Phase 1 — Scraping suppliers and products..."):
             stats = _run(_do())
 
         st.success(
             f"✅ **Phase 1 done** — "
             f"Suppliers: **{stats['suppliers']}** | "
-            f"Products: **{stats['saved']}**"
+            f"Products saved: **{stats['saved']}** | "
+            f"Skipped (dedup): **{stats['skipped']}**"
+        )
+
+        # ── PRODUCT RESULTS SHOWCASE ──────────────────────────
+        _render_product_results(
+            run_id           = run_id,
+            saved_count      = stats["saved"],
+            skipped_count    = stats["skipped"],
+            supplier_count   = stats["suppliers"],
+            scraped_products = all_scraped_products,
         )
 
         # ── Phase 2+3+4 ───────────────────────────────────────
         prog.progress(75, "🧹 Phase 2 — Normalization + Embedding...")
         status.info("Running AI normalization and embedding...")
 
-        with st.spinner("Phase 2+3 — Normalization + Embedding..."):
-            pipeline_results = run_post_scraping_pipeline(
-                stats["run_id"], limit=500
-            )
+        with st.spinner("Phase 2+3 — Normalization + Embedding + Matching..."):
+            pipeline_results = run_post_scraping_pipeline(stats["run_id"], limit=500)
 
-        prog.progress(95, "🔗 Phase 4 — Matching done.")
+        prog.progress(95, "🔗 Phase 3 — Matching done.")
 
         new_prods = pipeline_results.get("new_products", 0)
         elapsed   = pipeline_results.get("elapsed", 0)
-        norm_err  = pipeline_results.get("phases",{}).get("normalization",{}).get("error")
-        match_err = pipeline_results.get("phases",{}).get("matching",{}).get("error")
+        norm_err  = pipeline_results.get("phases", {}).get("normalization", {}).get("error")
+        match_err = pipeline_results.get("phases", {}).get("matching", {}).get("error")
 
         if norm_err:
-            st.warning(f"⚠️ Normalization: {norm_err}")
+            st.warning(f"⚠️ Normalization issue: {norm_err}")
         if match_err:
-            st.warning(f"⚠️ Matching: {match_err}")
+            st.warning(f"⚠️ Matching issue: {match_err}")
 
-        # Save final card to DB
         _save_run_card(
             run_id, form_config, "COMPLETE",
-            suppliers  = stats["suppliers"],
-            products   = stats["saved"],
+            suppliers    = stats["suppliers"],
+            products     = stats["saved"],
             new_products = new_prods,
         )
 
         prog.progress(100, "✅ All phases complete!")
         st.success(
             f"✅ **Full pipeline complete** in {elapsed}s  \n"
-            f"🆕 **{new_prods}** new products → Validation"
+            f"🆕 **{new_prods}** new products → ready for Validation"
         )
 
         # ── Start cron if schedule enabled ────────────────────
@@ -567,21 +636,18 @@ def _launch(countries, min_suppliers, max_suppliers,
             st.session_state["cron_running"]  = True
             st.session_state["cron_end_dt"]   = end_dt
             st.session_state["cron_interval"] = interval_min
-            st.info(
-                f"⏱ Cron started: re-runs every **{interval_min} min** "
-                f"until **{end_dt.strftime('%H:%M')} CET**"
-            )
+            st.info(f"⏱ Cron started: re-runs every **{interval_min} min** until **{end_dt.strftime('%H:%M')} CET**")
 
         # ── Redirect to Validation ────────────────────────────
         st.balloons()
         if new_prods > 0:
-            st.success("👉 Redirecting to Validation...")
+            st.success("👉 Redirecting to Validation dashboard...")
             st.session_state["page"] = "validation"
             st.rerun()
         else:
-            st.info("No new products this run. Check History.")
+            st.info("No new products this run. Check History for details.")
 
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Error during pipeline: {e}")
         st.exception(e)
         _run(DatabaseManager().update_scraping_run(run_id, {"status": "FAILED"}))
