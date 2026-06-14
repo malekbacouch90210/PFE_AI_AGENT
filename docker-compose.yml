@@ -1,0 +1,40 @@
+services:
+
+  # ── Odoo 19 (unchanged) ─────────────────────────────────────
+  odoo:
+    image: odoo:19
+    container_name: dex_odoo
+    restart: unless-stopped
+    depends_on:
+      - odoo_db
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: odoo_db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./odoo_addons:/mnt/extra-addons
+    command: >
+      odoo
+      --db_host=odoo_db
+      --db_user=odoo
+      --db_password=odoo
+      --addons-path=/usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons
+
+  # ── Odoo PostgreSQL (unchanged) ─────────────────────────────
+  odoo_db:
+    image: postgres:17
+    container_name: dex_odoo_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - odoo_db_data:/var/lib/postgresql/data
+
+volumes:
+  odoo_data:
+  odoo_db_data:

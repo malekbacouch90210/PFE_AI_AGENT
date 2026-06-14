@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="dex_product_list_view" model="ir.ui.view">
+        <field name="name">dex.product.list</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <list string="DEX Products">
+                <field name="name"               string="Product Name"/>
+                <field name="x_activity_type"    string="Type"/>
+                <field name="x_ville"            string="City"/>
+                <field name="x_country"          string="Country"/>
+                <field name="x_category_dex"     string="Category"/>
+                <field name="list_price"         string="Price (EUR)"
+                       widget="monetary"
+                       options="{'currency_field': 'currency_id'}"/>
+                <field name="x_price_estimated"  string="Estimated" widget="boolean"/>
+                <field name="x_duration_minutes" string="Duration (min)"/>
+                <field name="x_supplier_name"    string="Supplier"/>
+                <field name="x_similarity_score" string="Match Score"/>
+                <field name="currency_id"        column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="dex_product_form_view" model="ir.ui.view">
+        <field name="name">dex.product.form</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <form string="DEX Product">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Product name..."/>
+                        </h1>
+                    </div>
+                    <group string="Activity and Location">
+                        <group>
+                            <field name="x_activity_type"/>
+                            <field name="x_category_dex"/>
+                            <field name="x_duration_minutes" string="Duration (min)"/>
+                        </group>
+                        <group>
+                            <field name="x_ville"   string="City"/>
+                            <field name="x_country" string="Country"/>
+                        </group>
+                    </group>
+                    <group string="Pricing">
+                        <group>
+                            <field name="list_price"     string="Sales Price (EUR)"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="standard_price" string="Cost Price (EUR)"
+                                   widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="x_price_estimated"  string="Price Estimated"/>
+                            <field name="x_original_price"   string="Original Price"/>
+                            <field name="x_original_currency"/>
+                        </group>
+                    </group>
+                    <group string="Purchase and Inventory">
+                        <group>
+                            <field name="sale_ok"     string="Can be Sold"/>
+                            <field name="purchase_ok" string="Can be Purchased"/>
+                            <field name="type"        string="Product Type"/>
+                        </group>
+                        <group>
+                            <field name="x_supplier_name"   string="Supplier Name"/>
+                            <field name="x_supplier_domain" string="Supplier Website"
+                                   widget="url"/>
+                        </group>
+                    </group>
+                    <group string="AI Sourcing Info">
+                        <group>
+                            <field name="x_ai_agent_source"  string="AI Agent Sourced"/>
+                            <field name="x_scraping_method"  string="Scraping Method"/>
+                            <field name="x_similarity_score" string="DEX Match Score"/>
+                        </group>
+                        <group>
+                            <field name="x_run_id"      string="Run ID"/>
+                            <field name="x_source_url"  string="Source URL" widget="url"/>
+                            <field name="x_inserted_at" string="Inserted At"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description_sale"
+                                   placeholder="Product description..."/>
+                        </page>
+                        <page string="Purchase Notes">
+                            <field name="description_purchase"
+                                   placeholder="Notes for purchasing team..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="dex_product_kanban_view" model="ir.ui.view">
+        <field name="name">dex.product.kanban</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <kanban string="DEX Products">
+                <field name="name"/>
+                <field name="list_price"/>
+                <field name="currency_id"/>
+                <field name="x_activity_type"/>
+                <field name="x_ville"/>
+                <field name="x_country"/>
+                <field name="x_category_dex"/>
+                <field name="x_supplier_name"/>
+                <field name="x_price_estimated"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click" style="padding:12px">
+                            <div style="margin-bottom:6px">
+                                <span t-attf-class="badge #{
+                                    record.x_activity_type.raw_value == 'EXCURSION'
+                                        ? 'text-bg-info'
+                                        : record.x_activity_type.raw_value == 'TICKET'
+                                            ? 'text-bg-warning'
+                                            : 'text-bg-success'}">
+                                    <field name="x_activity_type"/>
+                                </span>
+                            </div>
+                            <strong style="font-size:13px;display:block;margin-bottom:4px">
+                                <field name="name"/>
+                            </strong>
+                            <div class="text-muted" style="font-size:12px;margin-bottom:2px">
+                                <field name="x_ville"/>
+                                <t t-if="record.x_country.raw_value">
+                                    , <field name="x_country"/>
+                                </t>
+                            </div>
+                            <div class="text-muted" style="font-size:11px;margin-bottom:8px">
+                                <field name="x_category_dex"/>
+                            </div>
+                            <div style="display:flex;justify-content:space-between">
+                                <strong style="color:#6c3fc5">
+                                    <field name="list_price" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                </strong>
+                                <small class="text-muted">
+                                    <field name="x_supplier_name"/>
+                                </small>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="dex_product_search_view" model="ir.ui.view">
+        <field name="name">dex.product.search</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <search string="Search DEX Products">
+                <field name="name"            string="Product Name"/>
+                <field name="x_ville"         string="City"/>
+                <field name="x_country"       string="Country"/>
+                <field name="x_supplier_name" string="Supplier"/>
+                <field name="x_category_dex"  string="Category"/>
+                <filter name="f_ai"
+                        string="AI Sourced"
+                        domain="[('x_ai_agent_source','=',True)]"/>
+                <separator/>
+                <filter name="f_excursion"
+                        string="Excursions"
+                        domain="[('x_activity_type','=','EXCURSION')]"/>
+                <filter name="f_ticket"
+                        string="Tickets"
+                        domain="[('x_activity_type','=','TICKET')]"/>
+                <filter name="f_transfer"
+                        string="Transfers"
+                        domain="[('x_activity_type','=','TRANSFER')]"/>
+                <separator/>
+                <filter name="g_type"
+                        string="By Activity Type"
+                        context="{'group_by':'x_activity_type'}"/>
+                <filter name="g_country"
+                        string="By Country"
+                        context="{'group_by':'x_country'}"/>
+                <filter name="g_city"
+                        string="By City"
+                        context="{'group_by':'x_ville'}"/>
+                <filter name="g_category"
+                        string="By Category"
+                        context="{'group_by':'x_category_dex'}"/>
+                <filter name="g_supplier"
+                        string="By Supplier"
+                        context="{'group_by':'x_supplier_name'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="dex_product_action" model="ir.actions.act_window">
+        <field name="name">DEX Products</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('x_ai_agent_source','=',True)]</field>
+        <field name="context">{'search_default_f_ai':1}</field>
+        <field name="search_view_id" ref="dex_product_search_view"/>
+    </record>
+
+</odoo>

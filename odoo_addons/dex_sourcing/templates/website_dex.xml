@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+    DEX EXPERIENCE WEBSITE TEMPLATES
+    Replica of day-experience.com inside Odoo Website
+
+    Pages:
+      /dex              → Homepage (like DEX homepage with hero + search + featured)
+      /dex/destinations → NOS DESTINATIONS (countries list with product counts)
+      /dex/country/<country> → Country page (cities with counts)
+      /dex/city/<city>  → City page (Excursions/Tickets/Transfers tabs)
+      /dex/product/<id> → Product detail page
+    -->
+
+    <!-- ═══════════════════════════════════════════════════
+         HOMEPAGE — /dex
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_homepage" name="DEX Experience Homepage">
+        <t t-call="website.layout">
+            <t t-set="title">DEX Experience — Excursions, Tickets, Transferts</t>
+
+            <!-- HERO BANNER -->
+            <div style="background:linear-gradient(135deg,#1a1a2e 0%,#6c3fc5 100%);
+                        color:#fff;padding:0 0 40px 0;min-height:380px;
+                        display:flex;flex-direction:column;align-items:center;
+                        justify-content:center;text-align:center;position:relative">
+                <div style="padding:60px 20px 30px">
+                    <h1 style="font-size:42px;font-weight:800;margin-bottom:12px">
+                        Excursions – Tickets – Transferts
+                    </h1>
+                    <p style="font-size:18px;opacity:.85;max-width:600px;margin:0 auto 32px">
+                        Découvrez des milliers d'activités touristiques dans le monde entier
+                    </p>
+                    <!-- SEARCH BAR like DEX -->
+                    <form action="/dex/search" method="get"
+                          style="display:flex;gap:10px;max-width:580px;margin:0 auto">
+                        <input type="text" name="q"
+                               placeholder="Ville, Mot-clé ..."
+                               style="flex:1;padding:14px 20px;border-radius:8px;
+                                      border:none;font-size:16px"/>
+                        <button type="submit"
+                                style="padding:14px 28px;background:#e84393;
+                                       border:none;border-radius:8px;color:#fff;
+                                       font-weight:700;font-size:16px;cursor:pointer">
+                            🔍
+                        </button>
+                    </form>
+                </div>
+                <!-- ACTIVITY TYPE TABS like DEX -->
+                <div style="display:flex;gap:0;margin-top:20px">
+                    <a href="/dex/type/excursion"
+                       style="padding:12px 32px;background:rgba(255,255,255,0.15);
+                              color:#fff;text-decoration:none;font-weight:600;
+                              border-radius:8px 0 0 8px;border:1px solid rgba(255,255,255,0.3)">
+                        🧭 Excursions
+                    </a>
+                    <a href="/dex/type/ticket"
+                       style="padding:12px 32px;background:rgba(255,255,255,0.15);
+                              color:#fff;text-decoration:none;font-weight:600;
+                              border:1px solid rgba(255,255,255,0.3)">
+                        🎫 Tickets
+                    </a>
+                    <a href="/dex/type/transfer"
+                       style="padding:12px 32px;background:rgba(255,255,255,0.15);
+                              color:#fff;text-decoration:none;font-weight:600;
+                              border-radius:0 8px 8px 0;border:1px solid rgba(255,255,255,0.3)">
+                        🚗 Transferts
+                    </a>
+                </div>
+            </div>
+
+            <!-- STATS BAR like DEX "NOS DESTINATIONS (17470)" -->
+            <div style="background:#fff;border-bottom:2px solid #f0f0f0;
+                        padding:16px 40px;display:flex;gap:40px;
+                        align-items:center;justify-content:center;flex-wrap:wrap">
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#e84393">825</div>
+                    <div style="font-size:13px;color:#666">Activités sourced</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#6c3fc5">30+</div>
+                    <div style="font-size:13px;color:#666">Pays couverts</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#e84393">115</div>
+                    <div style="font-size:13px;color:#666">Fournisseurs</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#6c3fc5">718</div>
+                    <div style="font-size:13px;color:#666">Excursions</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#e84393">73</div>
+                    <div style="font-size:13px;color:#666">Tickets</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:28px;font-weight:800;color:#6c3fc5">34</div>
+                    <div style="font-size:13px;color:#666">Transferts</div>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT -->
+            <div style="max-width:1200px;margin:0 auto;padding:40px 20px">
+
+                <!-- FEATURED DESTINATIONS like DEX homepage -->
+                <h2 style="text-align:center;font-size:28px;font-weight:700;
+                            color:#1a1a2e;margin-bottom:8px">Nos Destinations</h2>
+                <p style="text-align:center;color:#666;margin-bottom:32px">
+                    Découvrez nos activités par destination
+                </p>
+
+                <!-- Country cards grid -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+                             gap:16px;margin-bottom:48px">
+                    <t t-foreach="countries" t-as="c">
+                        <a t-attf-href="/dex/country/#{c['country']}"
+                           style="display:block;background:#fff;border-radius:12px;
+                                  padding:20px;text-align:center;
+                                  box-shadow:0 2px 12px rgba(0,0,0,.08);
+                                  text-decoration:none;color:#1a1a2e;
+                                  transition:transform .2s,box-shadow .2s"
+                           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(108,63,197,.15)'"
+                           onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 12px rgba(0,0,0,.08)'">
+                            <div style="font-size:32px;margin-bottom:8px">🌍</div>
+                            <div style="font-weight:700;font-size:15px">
+                                <t t-esc="c['country']"/>
+                            </div>
+                            <div style="color:#e84393;font-size:13px;margin-top:4px">
+                                <t t-esc="c['count']"/> activités
+                            </div>
+                        </a>
+                    </t>
+                </div>
+
+                <!-- LINK to all destinations -->
+                <div style="text-align:center;margin-bottom:48px">
+                    <a href="/dex/destinations"
+                       style="display:inline-block;padding:14px 40px;
+                              background:transparent;border:2px solid #6c3fc5;
+                              color:#6c3fc5;border-radius:8px;font-weight:700;
+                              text-decoration:none;font-size:15px">
+                        Voir toutes les destinations
+                    </a>
+                </div>
+
+                <!-- FEATURED PRODUCTS like DEX "Activités incontournables" -->
+                <h2 style="text-align:center;font-size:28px;font-weight:700;
+                            color:#1a1a2e;margin-bottom:8px">Activités incontournables</h2>
+                <p style="text-align:center;color:#666;margin-bottom:32px">
+                    Sélection de nos meilleures activités
+                </p>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+                    <t t-foreach="featured_products" t-as="p">
+                        <a t-attf-href="/dex/product/#{p['id']}"
+                           style="display:block;background:#fff;border-radius:12px;
+                                  overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                                  text-decoration:none;color:#1a1a2e;
+                                  transition:transform .2s,box-shadow .2s"
+                           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(232,67,147,.15)'"
+                           onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 12px rgba(0,0,0,.08)'">
+                            <!-- Product image placeholder with category color -->
+                            <div t-attf-style="height:160px;background:linear-gradient(135deg,
+                                #{p['type'] == 'EXCURSION' and '#6c3fc5,#a855f7' or
+                                  p['type'] == 'TICKET'    and '#e84393,#f472b6' or
+                                  '#0ea5e9,#38bdf8'});
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:52px;position:relative">
+                                <t t-if="p['type'] == 'EXCURSION'">🧭</t>
+                                <t t-elif="p['type'] == 'TICKET'">🎫</t>
+                                <t t-else="">🚗</t>
+                                <div style="position:absolute;bottom:10px;left:10px;
+                                            background:rgba(0,0,0,.5);color:#fff;
+                                            padding:4px 12px;border-radius:20px;
+                                            font-size:13px;font-weight:700">
+                                    À partir de <t t-esc="p['price']"/>€/pers.
+                                </div>
+                            </div>
+                            <div style="padding:14px">
+                                <div style="font-weight:700;font-size:14px;
+                                            margin-bottom:6px;line-height:1.4">
+                                    <t t-esc="p['name']"/>
+                                </div>
+                                <div style="color:#666;font-size:12px">
+                                    📍 <t t-esc="p['city'] or ''"/>
+                                    <t t-if="p['country']">, <t t-esc="p['country']"/></t>
+                                </div>
+                            </div>
+                        </a>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════
+         DESTINATIONS PAGE — /dex/destinations
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_destinations" name="DEX Destinations">
+        <t t-call="website.layout">
+            <t t-set="title">Nos Destinations — DEX Experience</t>
+            <div style="max-width:1100px;margin:0 auto;padding:40px 20px">
+                <h1 style="text-align:center;color:#e84393;font-size:32px;
+                            font-weight:800;margin-bottom:8px">
+                    NOS DESTINATIONS (<t t-esc="total_count"/>)
+                </h1>
+                <p style="text-align:center;color:#666;margin-bottom:40px">
+                    Activités touristiques découvertes par notre agent IA
+                </p>
+
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);
+                             gap:16px;margin-bottom:40px">
+                    <t t-foreach="countries" t-as="c">
+                        <a t-attf-href="/dex/country/#{c['country']}"
+                           style="display:flex;align-items:center;gap:12px;
+                                  padding:12px 16px;background:#fff;
+                                  border-radius:8px;text-decoration:none;
+                                  color:#1a1a2e;border:1px solid #f0f0f0;
+                                  transition:border-color .2s"
+                           onmouseover="this.style.borderColor='#e84393'"
+                           onmouseout="this.style.borderColor='#f0f0f0'">
+                            <span style="font-size:22px">🌍</span>
+                            <div>
+                                <div style="font-weight:600;font-size:14px">
+                                    <t t-esc="c['country']"/>
+                                </div>
+                                <div style="font-size:12px;color:#666">
+                                    (<t t-esc="c['count']"/>)
+                                </div>
+                            </div>
+                        </a>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════
+         COUNTRY PAGE — /dex/country/<country>
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_country_page" name="DEX Country Page">
+        <t t-call="website.layout">
+            <t t-set="title" t-valuef="NOS DESTINATIONS - #{country_name}"/>
+            <div style="max-width:900px;margin:0 auto;padding:40px 20px">
+                <h1 style="text-align:center;color:#e84393;font-size:28px;
+                            font-weight:800;margin-bottom:32px">
+                    NOS DESTINATIONS - <t t-esc="country_name"/>
+                </h1>
+
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+                    <t t-foreach="cities" t-as="c">
+                        <a t-attf-href="/dex/city/#{c['city']}"
+                           style="display:block;text-align:center;padding:16px;
+                                  background:#fff;border-radius:8px;
+                                  text-decoration:none;color:#1a1a2e;
+                                  border:1px solid #f0f0f0">
+                            <div style="font-weight:700;font-size:15px">
+                                <t t-esc="c['city']"/>
+                            </div>
+                            <div style="color:#666;font-size:13px;margin-top:4px">
+                                (<t t-esc="c['count']"/>)
+                            </div>
+                        </a>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════
+         CITY PAGE — /dex/city/<city>
+         Like DEX "BARCELONE" page with Excursions/Tickets/Transfers tabs
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_city_page" name="DEX City Page">
+        <t t-call="website.layout">
+            <t t-set="title" t-valuef="#{city_name} — DEX Experience"/>
+
+            <!-- HERO BANNER with city name like DEX -->
+            <div style="background:linear-gradient(135deg,#1a1a2e,#6c3fc5);
+                        color:#fff;padding:60px 20px;text-align:center">
+                <h1 style="font-size:42px;font-weight:800;letter-spacing:2px">
+                    <t t-esc="city_name"/>
+                </h1>
+            </div>
+
+            <div style="max-width:1100px;margin:0 auto;padding:32px 20px">
+
+                <!-- TABS like DEX "Excursions &amp; Tickets (0) / Transferts (6)" -->
+                <div style="display:flex;gap:0;margin-bottom:32px;
+                             border:1px solid #ddd;border-radius:8px;
+                             overflow:hidden;width:fit-content">
+                    <a t-attf-href="/dex/city/#{city_name}?type=excursion"
+                       t-attf-style="padding:12px 24px;font-weight:700;
+                                      text-decoration:none;
+                                      background:#{active_type == 'excursion' and '#1a1a2e' or '#fff'};
+                                      color:#{active_type == 'excursion' and '#fff' or '#1a1a2e'};
+                                      border-right:1px solid #ddd;font-size:14px">
+                        🧭 Excursions &amp; Tickets (<t t-esc="count_excursion"/>)
+                    </a>
+                    <a t-attf-href="/dex/city/#{city_name}?type=transfer"
+                       t-attf-style="padding:12px 24px;font-weight:700;
+                                      text-decoration:none;
+                                      background:#{active_type == 'transfer' and '#1a1a2e' or '#fff'};
+                                      color:#{active_type == 'transfer' and '#fff' or '#1a1a2e'};
+                                      font-size:14px">
+                        🚗 Transferts (<t t-esc="count_transfer"/>)
+                    </a>
+                </div>
+
+                <!-- PRODUCT GRID -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+                    <t t-foreach="products" t-as="p">
+                        <a t-attf-href="/dex/product/#{p['id']}"
+                           style="display:block;background:#fff;border-radius:12px;
+                                  overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                                  text-decoration:none;color:#1a1a2e;
+                                  transition:transform .2s"
+                           onmouseover="this.style.transform='translateY(-4px)'"
+                           onmouseout="this.style.transform='none'">
+                            <div t-attf-style="height:150px;
+                                background:linear-gradient(135deg,
+                                    #{p['type'] == 'EXCURSION' and '#6c3fc5,#a855f7' or
+                                      p['type'] == 'TICKET'    and '#e84393,#f472b6' or
+                                      '#0ea5e9,#38bdf8'});
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:42px;position:relative">
+                                <t t-if="p['type'] == 'EXCURSION'">🧭</t>
+                                <t t-elif="p['type'] == 'TICKET'">🎫</t>
+                                <t t-else="">🚗</t>
+                                <div style="position:absolute;bottom:8px;left:10px;
+                                            background:rgba(0,0,0,.55);color:#fff;
+                                            padding:3px 10px;border-radius:16px;
+                                            font-size:12px;font-weight:700">
+                                    À partir de <t t-esc="p['price']"/>€/pers.
+                                </div>
+                            </div>
+                            <div style="padding:12px">
+                                <div style="font-weight:700;font-size:13px;
+                                            margin-bottom:4px;line-height:1.4">
+                                    <t t-esc="p['name']"/>
+                                </div>
+                                <div style="color:#666;font-size:12px">
+                                    <t t-esc="p['category']"/>
+                                </div>
+                            </div>
+                        </a>
+                    </t>
+                </div>
+
+                <t t-if="not products">
+                    <div style="text-align:center;padding:60px;color:#999">
+                        Aucune activité trouvée pour ce filtre.
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════
+         PRODUCT DETAIL — /dex/product/<id>
+         Like DEX "Tour de la Casbah" page
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_product_detail" name="DEX Product Detail">
+        <t t-call="website.layout">
+            <t t-set="title" t-valuef="#{product['name']} — DEX Experience"/>
+            <div style="max-width:960px;margin:0 auto;padding:32px 20px">
+
+                <div style="display:grid;grid-template-columns:1fr 320px;gap:32px">
+
+                    <!-- LEFT COLUMN -->
+                    <div>
+                        <!-- Product image -->
+                        <div t-attf-style="height:280px;border-radius:12px;
+                            background:linear-gradient(135deg,
+                                #{product['type'] == 'EXCURSION' and '#6c3fc5,#a855f7' or
+                                  product['type'] == 'TICKET'    and '#e84393,#f472b6' or
+                                  '#0ea5e9,#38bdf8'});
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:80px;margin-bottom:24px">
+                            <t t-if="product['type'] == 'EXCURSION'">🧭</t>
+                            <t t-elif="product['type'] == 'TICKET'">🎫</t>
+                            <t t-else="">🚗</t>
+                        </div>
+
+                        <!-- Title + meta -->
+                        <h1 style="font-size:26px;font-weight:800;color:#1a1a2e;
+                                    margin-bottom:12px">
+                            <t t-esc="product['name']"/>
+                        </h1>
+                        <div style="display:flex;gap:16px;color:#666;
+                                    font-size:14px;margin-bottom:24px;flex-wrap:wrap">
+                            <span>🌍 <t t-esc="product['country'] or ''"/></span>
+                            <span>📍 <t t-esc="product['city'] or ''"/></span>
+                            <span>🏷️ <t t-esc="product['category'] or ''"/></span>
+                            <t t-if="product['duration']">
+                                <span>⏱ <t t-esc="product['duration']"/> min</span>
+                            </t>
+                        </div>
+
+                        <!-- Description sections like DEX -->
+                        <div style="border-top:1px solid #eee;padding-top:20px">
+                            <h2 style="font-size:16px;font-weight:700;margin-bottom:10px">
+                                📋 Description de votre expérience
+                            </h2>
+                            <p style="color:#555;line-height:1.7;font-size:14px">
+                                <t t-esc="product['description'] or 'Aucune description disponible.'"/>
+                            </p>
+                        </div>
+
+                        <div style="border-top:1px solid #eee;padding-top:20px;margin-top:20px">
+                            <h2 style="font-size:16px;font-weight:700;margin-bottom:10px">
+                                🤝 Fournisseur
+                            </h2>
+                            <p style="color:#555;font-size:14px">
+                                <t t-esc="product['supplier'] or 'N/A'"/>
+                                <t t-if="product['supplier_url']">
+                                    — <a t-attf-href="#{product['supplier_url']}"
+                                         target="_blank"
+                                         style="color:#6c3fc5">
+                                        Visiter le site
+                                    </a>
+                                </t>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN — BOOKING WIDGET like DEX -->
+                    <div>
+                        <div style="background:#fff;border-radius:12px;
+                                    box-shadow:0 4px 20px rgba(0,0,0,.12);
+                                    padding:24px;position:sticky;top:20px">
+
+                            <!-- Price like DEX "77€ / À partir de" -->
+                            <div style="text-align:center;margin-bottom:20px">
+                                <div style="font-size:13px;color:#666">À partir de</div>
+                                <div style="font-size:48px;font-weight:800;color:#e84393;
+                                            line-height:1.1">
+                                    <t t-esc="product['price'] or 'N/C'"/>
+                                    <span style="font-size:24px">€</span>
+                                </div>
+                                <div style="font-size:13px;color:#666">Par personne</div>
+                            </div>
+
+                            <!-- Activity type badge -->
+                            <div style="text-align:center;margin-bottom:16px">
+                                <span t-attf-style="display:inline-block;padding:6px 18px;
+                                    border-radius:20px;font-weight:700;font-size:13px;
+                                    background:#{product['type'] == 'EXCURSION' and '#ede9fe' or
+                                                product['type'] == 'TICKET'    and '#fce7f3' or
+                                                '#e0f2fe'};
+                                    color:#{product['type'] == 'EXCURSION' and '#6c3fc5' or
+                                             product['type'] == 'TICKET'    and '#be185d' or
+                                             '#0284c7'}">
+                                    <t t-esc="product['type']"/>
+                                </span>
+                            </div>
+
+                            <!-- Contact button like DEX -->
+                            <a href="/contactus"
+                               style="display:block;width:100%;padding:14px;
+                                      background:#e84393;color:#fff;
+                                      text-align:center;border-radius:8px;
+                                      font-weight:700;font-size:15px;
+                                      text-decoration:none;margin-bottom:10px">
+                                📩 Demander un devis
+                            </a>
+                            <a href="tel:+33184886886"
+                               style="display:block;width:100%;padding:12px;
+                                      background:#fff;color:#1a1a2e;
+                                      text-align:center;border-radius:8px;
+                                      font-weight:700;font-size:14px;
+                                      text-decoration:none;
+                                      border:2px solid #1a1a2e">
+                                📞 Réserver par Téléphone
+                            </a>
+
+                            <!-- Supplier info -->
+                            <div style="margin-top:16px;padding-top:16px;
+                                        border-top:1px solid #f0f0f0;
+                                        font-size:12px;color:#999;text-align:center">
+                                Fourni par <strong><t t-esc="product['supplier'] or 'DEX Partner'"/></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════
+         SEARCH RESULTS — /dex/search
+    ═══════════════════════════════════════════════════ -->
+    <template id="dex_search_results" name="DEX Search Results">
+        <t t-call="website.layout">
+            <t t-set="title" t-valuef="Recherche: #{query}"/>
+            <div style="max-width:1100px;margin:0 auto;padding:32px 20px">
+                <h1 style="font-size:24px;font-weight:700;color:#1a1a2e;margin-bottom:24px">
+                    Résultats pour "<t t-esc="query"/>"
+                    <span style="font-size:15px;font-weight:400;color:#666;margin-left:8px">
+                        (<t t-esc="len(products)"/> activités)
+                    </span>
+                </h1>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+                    <t t-foreach="products" t-as="p">
+                        <a t-attf-href="/dex/product/#{p['id']}"
+                           style="display:block;background:#fff;border-radius:12px;
+                                  overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                                  text-decoration:none;color:#1a1a2e">
+                            <div t-attf-style="height:130px;
+                                background:linear-gradient(135deg,#6c3fc5,#a855f7);
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:36px;position:relative">
+                                🌍
+                                <div style="position:absolute;bottom:8px;left:10px;
+                                            background:rgba(0,0,0,.5);color:#fff;
+                                            padding:3px 10px;border-radius:16px;font-size:11px">
+                                    <t t-esc="p['price']"/>€
+                                </div>
+                            </div>
+                            <div style="padding:12px">
+                                <div style="font-weight:700;font-size:13px;margin-bottom:4px">
+                                    <t t-esc="p['name']"/>
+                                </div>
+                                <div style="color:#666;font-size:12px">
+                                    📍 <t t-esc="p['city'] or ''"/>
+                                    <t t-if="p['country']">, <t t-esc="p['country']"/></t>
+                                </div>
+                            </div>
+                        </a>
+                    </t>
+                </div>
+
+                <t t-if="not products">
+                    <div style="text-align:center;padding:80px;color:#999">
+                        <div style="font-size:48px;margin-bottom:16px">🔍</div>
+                        Aucun résultat pour "<t t-esc="query"/>".
+                        <br/><a href="/dex" style="color:#6c3fc5">Retour à l'accueil</a>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+</odoo>

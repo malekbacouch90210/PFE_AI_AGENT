@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+    ODOO 19 FIX: Remove ALL <field name="id" type="measure"/> from pivot+graph.
+    In Odoo 19 the id field has no aggregate function → crash.
+    Instead: use list_price as measure, or leave measures empty (auto-count).
+    For explicit count: use <field name="x_similarity_score" type="measure"/>
+    which is a Float field that CAN be aggregated.
+    -->
+
+    <!-- Products: pivot country × type (no id measure) -->
+    <record id="dex_product_pivot_country_type" model="ir.ui.view">
+        <field name="name">dex.product.pivot.country.type</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <pivot string="Products by Country and Type">
+                <field name="x_country"       type="row"/>
+                <field name="x_activity_type" type="col"/>
+                <field name="list_price"       type="measure" string="Avg Price (EUR)"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Products: STACKED BAR country × type -->
+    <record id="dex_product_graph_type" model="ir.ui.view">
+        <field name="name">dex.product.graph.type</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <graph string="Products by Country and Type" type="bar" stacked="True">
+                <field name="x_country"       type="row"/>
+                <field name="x_activity_type" type="col"/>
+                <field name="list_price"       type="measure" string="Avg Price"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Products: PIE by country -->
+    <record id="dex_product_graph_country_pie" model="ir.ui.view">
+        <field name="name">dex.product.graph.country.pie</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <graph string="Products by Country" type="pie">
+                <field name="x_country" type="row"/>
+                <field name="list_price" type="measure" string="Products"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Products: BAR avg price per category -->
+    <record id="dex_product_graph_price_category" model="ir.ui.view">
+        <field name="name">dex.product.graph.price.category</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <graph string="Avg Price by Category" type="bar">
+                <field name="x_category_dex" type="row"/>
+                <field name="list_price"     type="measure" string="Avg Price (EUR)"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Products: Destinations pivot country→city→category -->
+    <record id="dex_product_pivot_destinations" model="ir.ui.view">
+        <field name="name">dex.product.pivot.destinations</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <pivot string="Destinations">
+                <field name="x_country"      type="row"/>
+                <field name="x_ville"        type="row"/>
+                <field name="x_category_dex" type="col"/>
+                <field name="list_price"     type="measure" string="Avg Price"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Suppliers: pivot zone × connection -->
+    <record id="dex_supplier_pivot_zone_conn" model="ir.ui.view">
+        <field name="name">dex.supplier.pivot.zone.conn</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <pivot string="Suppliers by Zone and Connection">
+                <field name="x_zone"                    type="row"/>
+                <field name="x_connection_type"         type="col"/>
+                <field name="x_supplier_score"          type="measure" string="Avg Score"/>
+                <field name="x_products_count_accepted" type="measure" string="Products"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Suppliers: PIE connection type -->
+    <record id="dex_supplier_graph_conn_pie" model="ir.ui.view">
+        <field name="name">dex.supplier.graph.conn.pie</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <graph string="Suppliers by Connection Type" type="pie">
+                <field name="x_connection_type" type="row"/>
+                <field name="x_supplier_score"  type="measure" string="Score"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Suppliers: BAR by zone -->
+    <record id="dex_supplier_graph_zone_bar" model="ir.ui.view">
+        <field name="name">dex.supplier.graph.zone.bar</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <graph string="Suppliers per Zone" type="bar">
+                <field name="x_zone"           type="row"/>
+                <field name="x_supplier_score" type="measure" string="Avg Score"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ═══ ACTIONS ═══ -->
+
+    <record id="action_dex_products_by_type" model="ir.actions.act_window">
+        <field name="name">By Type</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('x_ai_agent_source','=',True)]</field>
+        <field name="context">{'search_default_f_ai':1}</field>
+        <field name="search_view_id" ref="dex_product_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'graph','view_id':ref('dex_product_graph_type')}),
+            (0,0,{'view_mode':'pivot','view_id':ref('dex_product_pivot_country_type')}),
+        ]"/>
+    </record>
+
+    <record id="action_dex_products_by_country" model="ir.actions.act_window">
+        <field name="name">By Country</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('x_ai_agent_source','=',True)]</field>
+        <field name="context">{'search_default_f_ai':1}</field>
+        <field name="search_view_id" ref="dex_product_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'graph','view_id':ref('dex_product_graph_country_pie')}),
+            (0,0,{'view_mode':'pivot','view_id':ref('dex_product_pivot_country_type')}),
+        ]"/>
+    </record>
+
+    <record id="action_dex_products_price_category" model="ir.actions.act_window">
+        <field name="name">Price by Category</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('x_ai_agent_source','=',True)]</field>
+        <field name="search_view_id" ref="dex_product_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'graph','view_id':ref('dex_product_graph_price_category')}),
+        ]"/>
+    </record>
+
+    <record id="action_dex_destinations" model="ir.actions.act_window">
+        <field name="name">Destinations</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">pivot,list,kanban</field>
+        <field name="domain">[('x_ai_agent_source','=',True)]</field>
+        <field name="search_view_id" ref="dex_product_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'pivot','view_id':ref('dex_product_pivot_destinations')}),
+        ]"/>
+    </record>
+
+    <record id="action_dex_suppliers_by_conn" model="ir.actions.act_window">
+        <field name="name">By Connection Type</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('x_run_id','!=',False)]</field>
+        <field name="search_view_id" ref="dex_supplier_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'graph','view_id':ref('dex_supplier_graph_conn_pie')}),
+            (0,0,{'view_mode':'pivot','view_id':ref('dex_supplier_pivot_zone_conn')}),
+        ]"/>
+    </record>
+
+    <record id="action_dex_suppliers_by_zone" model="ir.actions.act_window">
+        <field name="name">By Zone</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('x_run_id','!=',False)]</field>
+        <field name="search_view_id" ref="dex_supplier_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'graph','view_id':ref('dex_supplier_graph_zone_bar')}),
+            (0,0,{'view_mode':'pivot','view_id':ref('dex_supplier_pivot_zone_conn')}),
+        ]"/>
+    </record>
+
+</odoo>

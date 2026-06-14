@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- LIST VIEW -->
+    <record id="dex_supplier_list_view" model="ir.ui.view">
+        <field name="name">dex.supplier.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="DEX Suppliers">
+                <field name="name"                      string="Supplier Name"/>
+                <field name="website"                   string="Website" widget="url"/>
+                <field name="phone"                     string="Phone"/>
+                <field name="email"                     string="Email"/>
+                <field name="x_connection_type"         string="Connection"/>
+                <field name="x_supplier_score"          string="Score"/>
+                <field name="x_has_api"                 string="API" widget="boolean"/>
+                <field name="x_has_channel_manager"     string="CM"  widget="boolean"/>
+                <field name="x_supplier_ville"          string="City"/>
+                <field name="x_zone"                    string="Zone"/>
+                <field name="x_products_count_accepted" string="Products"/>
+            </list>
+        </field>
+    </record>
+
+    <!--
+    FORM VIEW FIX: Use priority="16" to override Odoo's default res.partner form.
+    The standard form has priority 10-12. Ours at 16 wins for DEX suppliers
+    (filtered by x_run_id). We also add our fields as an INHERITED view to avoid
+    completely replacing the standard form which causes issues with Purchase app.
+    -->
+    <record id="dex_supplier_form_inherit" model="ir.ui.view">
+        <field name="name">dex.supplier.form.inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Add DEX tab to the existing partner form -->
+            <xpath expr="//notebook" position="inside">
+                <page string="DEX Sourcing" invisible="not x_run_id">
+                    <group string="Connection">
+                        <group>
+                            <field name="x_connection_type"/>
+                            <field name="x_has_api"  string="Has API"/>
+                            <field name="x_api_name" string="API Name"
+                                   invisible="not x_has_api"/>
+                        </group>
+                        <group>
+                            <field name="x_has_channel_manager" string="Has CM"/>
+                            <field name="x_channel_manager_name" string="CM Name"
+                                   invisible="not x_has_channel_manager"/>
+                        </group>
+                    </group>
+                    <group string="Sourcing Statistics">
+                        <group>
+                            <field name="x_supplier_score"           string="Score"/>
+                            <field name="x_supplier_status"          string="Status"/>
+                            <field name="x_supplier_ville"           string="Supplier City"/>
+                            <field name="x_zone"                     string="DEX Zone"/>
+                        </group>
+                        <group>
+                            <field name="x_products_count_scraped"   string="Products Scraped"/>
+                            <field name="x_products_count_accepted"  string="Products Accepted"/>
+                            <field name="x_run_id"                   string="Discovery Run"/>
+                            <field name="x_discovered_at"            string="Discovered At"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- SEARCH VIEW -->
+    <record id="dex_supplier_search_view" model="ir.ui.view">
+        <field name="name">dex.supplier.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Search DEX Suppliers">
+                <field name="name"             string="Name"/>
+                <field name="website"          string="Website"/>
+                <field name="phone"            string="Phone"/>
+                <field name="x_supplier_ville" string="City"/>
+                <field name="country_id"       string="Country"/>
+                <filter name="f_dex"   string="DEX Suppliers"
+                        domain="[('x_run_id','!=',False)]"/>
+                <filter name="f_api"   string="Has API"
+                        domain="[('x_has_api','=',True)]"/>
+                <filter name="f_cm"    string="Has Channel Manager"
+                        domain="[('x_has_channel_manager','=',True)]"/>
+                <filter name="f_both"  string="API + CM"
+                        domain="[('x_connection_type','=','BOTH')]"/>
+                <separator/>
+                <filter name="g_zone"    string="By Zone"
+                        context="{'group_by':'x_zone'}"/>
+                <filter name="g_conn"    string="By Connection"
+                        context="{'group_by':'x_connection_type'}"/>
+                <filter name="g_country" string="By Country"
+                        context="{'group_by':'country_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record id="dex_supplier_action" model="ir.actions.act_window">
+        <field name="name">DEX Suppliers</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('x_run_id','!=',False),('supplier_rank','&gt;',0)]</field>
+        <field name="context">{'search_default_f_dex':1,'default_supplier_rank':1}</field>
+        <field name="search_view_id" ref="dex_supplier_search_view"/>
+        <field name="view_ids" eval="[
+            (5,0,0),
+            (0,0,{'view_mode':'list','view_id':ref('dex_supplier_list_view')}),
+        ]"/>
+    </record>
+
+</odoo>

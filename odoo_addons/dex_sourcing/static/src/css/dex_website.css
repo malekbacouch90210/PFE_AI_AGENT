@@ -1,0 +1,414 @@
+/* ═══════════════════════════════════════════════════════════
+   DEX EXPERIENCE — Website CSS
+   Replicates day-experience.com visual style inside Odoo
+═══════════════════════════════════════════════════════════ */
+
+/* ── GLOBAL ─────────────────────────────────────────────── */
+.dex-body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1a1a2e;
+    background: #f5f6fa;
+}
+
+/* ── HERO BANNER ────────────────────────────────────────── */
+.dex-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #6c3fc5 100%);
+    color: #fff;
+    padding: 70px 20px 40px;
+    text-align: center;
+}
+.dex-hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+.dex-hero p {
+    font-size: 18px;
+    opacity: .85;
+    max-width: 600px;
+    margin: 0 auto 32px;
+}
+
+/* ── SEARCH BAR ─────────────────────────────────────────── */
+.dex-search-form {
+    display: flex;
+    gap: 10px;
+    max-width: 580px;
+    margin: 0 auto;
+}
+.dex-search-form input {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    outline: none;
+}
+.dex-search-form button {
+    padding: 14px 28px;
+    background: #e84393;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background .2s;
+}
+.dex-search-form button:hover {
+    background: #c2276e;
+}
+
+/* ── TYPE TABS ──────────────────────────────────────────── */
+.dex-type-tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 24px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.3);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+.dex-type-tab {
+    padding: 12px 32px;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    border-right: 1px solid rgba(255,255,255,.2);
+    transition: background .2s;
+}
+.dex-type-tab:last-child { border-right: none; }
+.dex-type-tab:hover,
+.dex-type-tab.active {
+    background: rgba(255,255,255,.35);
+    color: #fff;
+}
+
+/* ── STATS BAR ──────────────────────────────────────────── */
+.dex-stats-bar {
+    background: #fff;
+    border-bottom: 2px solid #f0f0f0;
+    padding: 16px 40px;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.dex-stat-item { text-align: center; }
+.dex-stat-num  { font-size: 28px; font-weight: 800; color: #e84393; }
+.dex-stat-num.purple { color: #6c3fc5; }
+.dex-stat-label { font-size: 13px; color: #666; }
+
+/* ── SECTION TITLE ──────────────────────────────────────── */
+.dex-section-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 8px;
+}
+.dex-section-sub {
+    text-align: center;
+    color: #666;
+    margin-bottom: 32px;
+    font-size: 15px;
+}
+.dex-section-title.pink { color: #e84393; }
+
+/* ── COUNTRY GRID ───────────────────────────────────────── */
+.dex-country-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+}
+.dex-country-card {
+    display: block;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    text-decoration: none;
+    color: #1a1a2e;
+    transition: transform .2s, box-shadow .2s;
+    border: 1px solid #f0f0f0;
+}
+.dex-country-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(108,63,197,.15);
+    border-color: #e84393;
+    color: #1a1a2e;
+    text-decoration: none;
+}
+.dex-country-card .flag   { font-size: 32px; margin-bottom: 8px; }
+.dex-country-card .name   { font-weight: 700; font-size: 14px; }
+.dex-country-card .count  { color: #e84393; font-size: 13px; margin-top: 4px; }
+
+/* ── PRODUCT CARDS ──────────────────────────────────────── */
+.dex-product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 20px;
+}
+.dex-product-card {
+    display: block;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    text-decoration: none;
+    color: #1a1a2e;
+    transition: transform .2s, box-shadow .2s;
+}
+.dex-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(232,67,147,.15);
+    text-decoration: none;
+    color: #1a1a2e;
+}
+.dex-product-thumb {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    position: relative;
+}
+.dex-product-thumb.excursion { background: linear-gradient(135deg,#6c3fc5,#a855f7); }
+.dex-product-thumb.ticket    { background: linear-gradient(135deg,#e84393,#f472b6); }
+.dex-product-thumb.transfer  { background: linear-gradient(135deg,#0ea5e9,#38bdf8); }
+.dex-price-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 12px;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+.dex-product-body { padding: 14px; }
+.dex-product-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+.dex-product-meta { color: #666; font-size: 12px; }
+.dex-product-cat  {
+    display: inline-block;
+    background: #f3f0ff;
+    color: #6c3fc5;
+    border-radius: 10px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* ── DESTINATIONS PAGE ──────────────────────────────────── */
+.dex-dest-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+.dex-dest-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #1a1a2e;
+    border: 1px solid #f0f0f0;
+    transition: border-color .2s;
+}
+.dex-dest-item:hover {
+    border-color: #e84393;
+    text-decoration: none;
+    color: #1a1a2e;
+}
+.dex-dest-item .dest-name  { font-weight: 600; font-size: 14px; }
+.dex-dest-item .dest-count { font-size: 12px; color: #999; }
+
+/* ── CITY PAGE ──────────────────────────────────────────── */
+.dex-city-hero {
+    background: linear-gradient(135deg,#1a1a2e,#6c3fc5);
+    color: #fff;
+    padding: 60px 20px;
+    text-align: center;
+}
+.dex-city-hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.dex-type-switcher {
+    display: flex;
+    gap: 0;
+    width: fit-content;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+.dex-type-switch {
+    padding: 12px 24px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 14px;
+    border-right: 1px solid #ddd;
+    background: #fff;
+    color: #1a1a2e;
+    transition: background .2s, color .2s;
+}
+.dex-type-switch:last-child { border-right: none; }
+.dex-type-switch.active,
+.dex-type-switch:hover {
+    background: #1a1a2e;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ── PRODUCT DETAIL ─────────────────────────────────────── */
+.dex-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 32px;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px;
+}
+.dex-detail-image {
+    height: 280px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 80px;
+    margin-bottom: 24px;
+}
+.dex-detail-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 12px;
+}
+.dex-detail-meta {
+    display: flex;
+    gap: 16px;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+.dex-detail-section {
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+.dex-detail-section h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* ── BOOKING WIDGET ─────────────────────────────────────── */
+.dex-booking-widget {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.12);
+    padding: 24px;
+    position: sticky;
+    top: 20px;
+}
+.dex-booking-price-label { font-size: 13px; color: #666; text-align: center; }
+.dex-booking-price {
+    font-size: 52px;
+    font-weight: 800;
+    color: #e84393;
+    text-align: center;
+    line-height: 1.1;
+}
+.dex-booking-price sup { font-size: 24px; }
+.dex-booking-price-per { font-size: 13px; color: #666; text-align: center; margin-bottom: 20px; }
+.dex-btn-devis {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #e84393;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: background .2s;
+}
+.dex-btn-devis:hover { background: #c2276e; color: #fff; text-decoration: none; }
+.dex-btn-phone {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    color: #1a1a2e;
+    text-align: center;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    border: 2px solid #1a1a2e;
+    transition: background .2s, color .2s;
+}
+.dex-btn-phone:hover {
+    background: #1a1a2e;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ── VIEW ALL BUTTON ────────────────────────────────────── */
+.dex-btn-outline {
+    display: inline-block;
+    padding: 14px 40px;
+    background: transparent;
+    border: 2px solid #6c3fc5;
+    color: #6c3fc5;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 15px;
+    transition: background .2s, color .2s;
+}
+.dex-btn-outline:hover {
+    background: #6c3fc5;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ── CONTAINER ──────────────────────────────────────────── */
+.dex-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .dex-hero h1          { font-size: 26px; }
+    .dex-dest-grid        { grid-template-columns: repeat(2, 1fr); }
+    .dex-detail-layout    { grid-template-columns: 1fr; }
+    .dex-booking-widget   { position: static; }
+    .dex-type-tabs        { flex-direction: column; }
+    .dex-stats-bar        { gap: 20px; }
+}

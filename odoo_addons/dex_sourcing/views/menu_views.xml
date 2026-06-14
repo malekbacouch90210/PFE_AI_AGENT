@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="dex_root_menu"
+              name="DEX Sourcing"
+              sequence="5"
+              web_icon="dex_sourcing,static/description/icon.png"/>
+
+    <menuitem id="dex_menu_products"
+              name="Products"
+              parent="dex_root_menu"
+              sequence="10"/>
+
+    <menuitem id="dex_menu_products_catalog"
+              name="Product Catalog"
+              parent="dex_menu_products"
+              action="dex_product_action"
+              sequence="10"/>
+
+    <menuitem id="dex_menu_products_by_type"
+              name="By Type"
+              parent="dex_menu_products"
+              action="action_dex_products_by_type"
+              sequence="20"/>
+
+    <menuitem id="dex_menu_products_by_country"
+              name="By Country"
+              parent="dex_menu_products"
+              action="action_dex_products_by_country"
+              sequence="30"/>
+
+    <menuitem id="dex_menu_destinations"
+              name="Destinations"
+              parent="dex_menu_products"
+              action="action_dex_destinations"
+              sequence="40"/>
+
+    <menuitem id="dex_menu_price_category"
+              name="Price by Category"
+              parent="dex_menu_products"
+              action="action_dex_products_price_category"
+              sequence="50"/>
+
+    <menuitem id="dex_menu_suppliers"
+              name="Suppliers"
+              parent="dex_root_menu"
+              sequence="20"/>
+
+    <menuitem id="dex_menu_suppliers_directory"
+              name="Supplier Directory"
+              parent="dex_menu_suppliers"
+              action="dex_supplier_action"
+              sequence="10"/>
+
+    <menuitem id="dex_menu_suppliers_by_conn"
+              name="By Connection Type"
+              parent="dex_menu_suppliers"
+              action="action_dex_suppliers_by_conn"
+              sequence="20"/>
+
+    <menuitem id="dex_menu_suppliers_by_zone"
+              name="By Zone"
+              parent="dex_menu_suppliers"
+              action="action_dex_suppliers_by_zone"
+              sequence="30"/>
+
+</odoo>
